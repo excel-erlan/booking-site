@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Онлайн запись</title>
+</head>
+<body>
+
+<h2>Запись на приём</h2>
+
+<label>Дата:</label><br>
+<input type="date" id="date"><br><br>
+
+<label>Время:</label><br>
+<select id="time">
+  <option>Сначала выберите дату</option>
+</select><br><br>
+
+<label>Имя:</label><br>
+<input id="name"><br><br>
+
+<label>Телефон:</label><br>
+<input id="phone"><br><br>
+
+<button onclick="book()">Записаться</button>
+
+<p id="msg"></p>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbzW8qdF5cfsA9sPPTJj9iG5ekKPPgV15F28DXgEuqe3zxII5MsYIbyXNllJp-1r4kI/exec";
+
+const TIMES = [
+ "09:00","09:30","10:00","10:30",
+ "11:00","11:30","12:00","12:30",
+ "14:00","14:30","15:00","15:30",
+ "16:00","16:30","17:00"
+];
+
+date.onchange = loadTimes;
+
+function loadTimes(){
+  time.innerHTML = "";
+  fetch(`${API}?action=busy&date=${date.value}`)
+    .then(r=>r.json())
+    .then(d=>{
+      (d.busy||[]).forEach(()=>{});
+      TIMES.forEach(t=>{
+        if(!(d.busy||[]).includes(t)){
+          let o=document.createElement("option");
+          o.value=t; o.text=t;
+          time.appendChild(o);
+        }
+      });
+      if(!time.options.length){
+        time.innerHTML="<option>Нет свободного времени</option>";
+      }
+    });
+}
+
+function book(){
+  fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"book",
+      date:date.value,
+      time:time.value,
+      name:name.value,
+      phone:phone.value
+    })
+  })
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.ok){
+      msg.textContent="✅ Запись сохранена";
+      loadTimes(); // сразу обновляем — время пропадает
+    }else if(res.error==="SLOT_BUSY"){
+      msg.textContent="⛔ Это время уже занято";
+      loadTimes();
+    }else{
+      msg.textContent="Ошибка";
+    }
+  });
+}
+</script>
+
+</body>
+</html>
