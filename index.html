@@ -58,26 +58,29 @@ function loadTimes(){
 }
 
 function book(){
-  fetch(API,{
-    method:"POST",
-    body:JSON.stringify({
-      action:"book",
-      date:date.value,
-      time:time.value,
-      name:name.value,
-      phone:phone.value
+  fetch(API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      action: "book",
+      date: date.value,
+      time: time.value,
+      name: name.value,
+      phone: phone.value
     })
   })
-  .then(r=>r.json())
-  .then(res=>{
-    if(res.ok){
-      msg.textContent="✅ Запись сохранена";
-      loadTimes(); // сразу обновляем — время пропадает
-    }else if(res.error==="SLOT_BUSY"){
-      msg.textContent="⛔ Это время уже занято";
+  .then(r => r.json())
+  .then(res => {
+    if (res.ok) {
+      msg.textContent = "✅ Запись сохранена";
+      loadTimes(); // время исчезает сразу
+    } else if (res.error === "SLOT_BUSY") {
+      msg.textContent = "⛔ Это время уже занято";
       loadTimes();
-    }else{
-      msg.textContent="Ошибка";
+    } else {
+      msg.textContent = "❌ Ошибка";
     }
   });
 }
@@ -85,3 +88,4 @@ function book(){
 
 </body>
 </html>
+
