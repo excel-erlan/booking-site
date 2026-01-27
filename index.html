@@ -58,38 +58,39 @@ function loadTimes(){
 }
 
 
+<script>
 function book(){
-  const data = new URLSearchParams();
-  data.append("action","book");
-  data.append("date", date.value);
-  data.append("time", time.value);
-  data.append("name", name.value);
-  data.append("phone", phone.value);
+  const url =
+    API +
+    "?action=book" +
+    "&date=" + encodeURIComponent(date.value) +
+    "&time=" + encodeURIComponent(time.value) +
+    "&name=" + encodeURIComponent(name.value) +
+    "&phone=" + encodeURIComponent(phone.value);
 
-  fetch(API, {
-    method: "POST",
-    body: data
-  })
-  .then(r => r.json())
-  .then(res => {
-    if (res.ok) {
-      msg.textContent = "✅ Запись сохранена";
-      loadTimes(); // слот пропадает сразу
-    } else if (res.error === "SLOT_BUSY") {
-      msg.textContent = "⛔ Это время уже занято";
-      loadTimes();
-    } else {
+  fetch(url)
+    .then(r => r.json())
+    .then(res => {
+      if (res.ok) {
+        msg.textContent = "✅ Запись сохранена";
+        loadTimes(); // слот исчезает сразу
+      } else if (res.error === "SLOT_BUSY") {
+        msg.textContent = "⛔ Это время уже занято";
+        loadTimes();
+      } else {
+        msg.textContent = "❌ Ошибка";
+      }
+    })
+    .catch(() => {
       msg.textContent = "❌ Ошибка";
-    }
-  })
-  .catch(() => {
-    msg.textContent = "❌ Ошибка";
-  });
+    });
 }
 </script>
 
 
+
 </body>
 </html>
+
 
 
