@@ -57,35 +57,39 @@ function loadTimes(){
     });
 }
 
+
 function book(){
+  const data = new URLSearchParams();
+  data.append("action","book");
+  data.append("date", date.value);
+  data.append("time", time.value);
+  data.append("name", name.value);
+  data.append("phone", phone.value);
+
   fetch(API, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      action: "book",
-      date: date.value,
-      time: time.value,
-      name: name.value,
-      phone: phone.value
-    })
+    body: data
   })
   .then(r => r.json())
   .then(res => {
     if (res.ok) {
       msg.textContent = "✅ Запись сохранена";
-      loadTimes(); // время исчезает сразу
+      loadTimes(); // слот пропадает сразу
     } else if (res.error === "SLOT_BUSY") {
       msg.textContent = "⛔ Это время уже занято";
       loadTimes();
     } else {
       msg.textContent = "❌ Ошибка";
     }
+  })
+  .catch(() => {
+    msg.textContent = "❌ Ошибка";
   });
 }
 </script>
 
+
 </body>
 </html>
+
 
