@@ -55,7 +55,7 @@ function loadTimes() {
     .then(r => r.text())
     .then(txt => JSON.parse(txt))
     .then(data => {
-      const busy = data.busy || [];
+      const busy = (data.busy || []).map(x => String(x).trim());
       timeEl.innerHTML = "";
 
       TIMES.forEach(t => {
@@ -123,3 +123,4 @@ function book() {
 
 </body>
 </html>
+
