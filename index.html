@@ -2,98 +2,115 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>Онлайн запись</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Запись на приём</title>
 </head>
 <body>
+  <h2>Запись на приём</h2>
 
-<h2>Запись на приём</h2>
+  <label>Дата:</label><br>
+  <input type="date" id="date"><br><br>
 
-<label>Дата:</label><br>
-<input type="date" id="date"><br><br>
+  <label>Время:</label><br>
+  <select id="time">
+    <option value="">Сначала выберите дату</option>
+  </select><br><br>
 
-<label>Время:</label><br>
-<select id="time">
-  <option>Сначала выберите дату</option>
-</select><br><br>
+  <label>Имя:</label><br>
+  <input type="text" id="name"><br><br>
 
-<label>Имя:</label><br>
-<input id="name"><br><br>
+  <label>Телефон:</label><br>
+  <input type="text" id="phone" placeholder="+7700..."><br><br>
 
-<label>Телефон:</label><br>
-<input id="phone"><br><br>
+  <button id="btn">Записаться</button>
 
-<button onclick="book()">Записаться</button>
+  <p id="msg"></p>
 
-<p id="msg"></p>
+  <script>
+    const API = "https://script.google.com/macros/s/AKfycbzW8qdF5cfsA9sPPTJj9iG5ekKPPgV15F28DXgEuqe3zxII5MsYIbyXNllJp-1r4kI/exec";
 
-<script>
-const API = "https://script.google.com/macros/s/AKfycbzW8qdF5cfsA9sPPTJj9iG5ekKPPgV15F28DXgEuqe3zxII5MsYIbyXNllJp-1r4kI/exec";
+    const TIMES = [
+      "09:00","09:30","10:00","10:30",
+      "11:00","11:30","12:00","12:30",
+      "14:00","14:30","15:00","15:30",
+      "16:00","16:30","17:00"
+    ];
 
-const TIMES = [
- "09:00","09:30","10:00","10:30",
- "11:00","11:30","12:00","12:30",
- "14:00","14:30","15:00","15:30",
- "16:00","16:30","17:00"
-];
+    const dateEl = document.getElementById("date");
+    const timeEl = document.getElementById("time");
+    const nameEl = document.getElementById("name");
+    const phoneEl = document.getElementById("phone");
+    const msgEl  = document.getElementById("msg");
+    const btnEl  = document.getElementById("btn");
 
-date.onchange = loadTimes;
+    dateEl.addEventListener("change", loadTimes);
+    btnEl.addEventListener("click", book);
 
-function loadTimes(){
-  time.innerHTML = "";
-  fetch(`${API}?action=busy&date=${date.value}`)
-    .then(r=>r.json())
-    .then(d=>{
-      (d.busy||[]).forEach(()=>{});
-      TIMES.forEach(t=>{
-        if(!(d.busy||[]).includes(t)){
-          let o=document.createElement("option");
-          o.value=t; o.text=t;
-          time.appendChild(o);
-        }
-      });
-      if(!time.options.length){
-        time.innerHTML="<option>Нет свободного времени</option>";
+    function loadTimes() {
+      const date = dateEl.value;
+      msgEl.textContent = "";
+      timeEl.innerHTML = "<option value=''>Загрузка...</option>";
+
+      fetch(`${API}?action=busy&date=${encodeURIComponent(date)}`)
+        .then(r => r.json())
+        .then(data => {
+          const busy = data.busy || [];
+          timeEl.innerHTML = "";
+
+          TIMES.forEach(t => {
+            if (!busy.includes(t)) {
+              const o = document.createElement("option");
+              o.value = t;
+              o.textContent = t;
+              timeEl.appendChild(o);
+            }
+          });
+
+          if (!timeEl.options.length) {
+            timeEl.innerHTML = "<option value=''>Нет свободного времени</option>";
+          }
+        })
+        .catch(() => {
+          timeEl.innerHTML = "<option value=''>Ошибка загрузки</option>";
+        });
+    }
+
+    function book() {
+      const date = dateEl.value;
+      const time = timeEl.value;
+      const name = nameEl.value.trim();
+      const phone = phoneEl.value.trim();
+
+      if (!date || !time || !name || !phone) {
+        msgEl.textContent = "Заполни дату, время, имя и телефон.";
+        return;
       }
-    });
-}
 
+      btnEl.disabled = true;
+      msgEl.textContent = "Записываю...";
 
-</script>
-function book(){
-  const url =
-    API +
-    "?action=book" +
-    "&date=" + encodeURIComponent(date.value) +
-    "&time=" + encodeURIComponent(time.value) +
-    "&name=" + encodeURIComponent(name.value) +
-    "&phone=" + encodeURIComponent(phone.value);
+      const url = `${API}?action=book&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`;
 
-  fetch(url)
-    .then(r => r.json())
-    .then(res => {
-      if (res.ok) {
-        msg.textContent = "✅ Запись сохранена";
-        loadTimes(); // слот исчезает сразу
-      } else if (res.error === "SLOT_BUSY") {
-        msg.textContent = "⛔ Это время уже занято";
-        loadTimes();
-      } else {
-        msg.textContent = "❌ Ошибка";
-      }
-    })
-    .catch(() => {
-      msg.textContent = "❌ Ошибка";
-    });
-}
-</script>
-
-
-
-
+      fetch(url)
+        .then(r => r.json())
+        .then(res => {
+          if (res.ok) {
+            msgEl.textContent = "✅ Запись сохранена";
+            loadTimes(); // слот исчезает сразу
+          } else if (res.error === "SLOT_BUSY") {
+            msgEl.textContent = "⛔ Это время уже занято";
+            loadTimes();
+          } else {
+            msgEl.textContent = "❌ Ошибка";
+          }
+        })
+        .catch(() => {
+          msgEl.textContent = "❌ Ошибка";
+        })
+        .finally(() => {
+          btnEl.disabled = false;
+        });
+    }
+  </script>
 </body>
 </html>
-
-
-
-
-
