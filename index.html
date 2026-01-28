@@ -44,6 +44,17 @@ const msgEl  = document.getElementById("msg");
 const btnEl  = document.getElementById("btn");
 
 dateEl.addEventListener("change", loadTimes);
+  dateEl.addEventListener("input", () => {
+  const d = new Date(dateEl.value);
+  const day = d.getDay(); // 0 = воскресенье, 6 = суббота
+
+  if (day === 0 || day === 6) {
+    msgEl.textContent = "Выходной день. Выберите будний день.";
+    dateEl.value = "";
+    timeEl.innerHTML = "<option>Сначала выберите дату</option>";
+  }
+});
+
 btnEl.addEventListener("click", book);
 
 function loadTimes() {
@@ -123,4 +134,5 @@ function book() {
 
 </body>
 </html>
+
 
