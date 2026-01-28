@@ -2,115 +2,124 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Запись на приём</title>
 </head>
 <body>
-  <h2>Запись на приём</h2>
 
-  <label>Дата:</label><br>
-  <input type="date" id="date"><br><br>
+<h2>Запись на приём</h2>
 
-  <label>Время:</label><br>
-  <select id="time">
-    <option value="">Сначала выберите дату</option>
-  </select><br><br>
+<label>Дата:</label><br>
+<input type="date" id="date"><br><br>
 
-  <label>Имя:</label><br>
-  <input type="text" id="name"><br><br>
+<label>Время:</label><br>
+<select id="time">
+  <option value="">Сначала выберите дату</option>
+</select><br><br>
 
-  <label>Телефон:</label><br>
-  <input type="text" id="phone" placeholder="+7700..."><br><br>
+<label>Имя:</label><br>
+<input id="name"><br><br>
 
-  <button id="btn">Записаться</button>
+<label>Телефон:</label><br>
+<input id="phone" placeholder="+7700..."><br><br>
 
-  <p id="msg"></p>
+<button id="btn">Записаться</button>
 
-  <script>
-    const API = "https://script.google.com/macros/s/AKfycbzW8qdF5cfsA9sPPTJj9iG5ekKPPgV15F28DXgEuqe3zxII5MsYIbyXNllJp-1r4kI/exec";
+<p id="msg"></p>
 
-    const TIMES = [
-      "09:00","09:30","10:00","10:30",
-      "11:00","11:30","12:00","12:30",
-      "14:00","14:30","15:00","15:30",
-      "16:00","16:30","17:00"
-    ];
+<script>
+const API = "https://script.google.com/macros/s/AKfycbzW8qdF5cfsA9sPPTJj9iG5ekKPPgV15F28DXgEuqe3zxII5MsYIbyXNllJp-1r4kI/exec";
 
-    const dateEl = document.getElementById("date");
-    const timeEl = document.getElementById("time");
-    const nameEl = document.getElementById("name");
-    const phoneEl = document.getElementById("phone");
-    const msgEl  = document.getElementById("msg");
-    const btnEl  = document.getElementById("btn");
+const TIMES = [
+  "09:00","09:30","10:00","10:30",
+  "11:00","11:30","12:00","12:30",
+  "14:00","14:30","15:00","15:30",
+  "16:00","16:30","17:00"
+];
 
-    dateEl.addEventListener("change", loadTimes);
-    btnEl.addEventListener("click", book);
+const dateEl = document.getElementById("date");
+const timeEl = document.getElementById("time");
+const nameEl = document.getElementById("name");
+const phoneEl = document.getElementById("phone");
+const msgEl  = document.getElementById("msg");
+const btnEl  = document.getElementById("btn");
 
-    function loadTimes() {
-      const date = dateEl.value;
-      msgEl.textContent = "";
-      timeEl.innerHTML = "<option value=''>Загрузка...</option>";
+dateEl.addEventListener("change", loadTimes);
+btnEl.addEventListener("click", book);
 
-      fetch(`${API}?action=busy&date=${encodeURIComponent(date)}`)
-        .then(r => r.json())
-        .then(data => {
-          const busy = data.busy || [];
-          timeEl.innerHTML = "";
+function loadTimes() {
+  const date = dateEl.value;
+  msgEl.textContent = "";
+  timeEl.innerHTML = "<option>Загрузка...</option>";
 
-          TIMES.forEach(t => {
-            if (!busy.includes(t)) {
-              const o = document.createElement("option");
-              o.value = t;
-              o.textContent = t;
-              timeEl.appendChild(o);
-            }
-          });
+  fetch(`${API}?action=busy&date=${encodeURIComponent(date)}`)
+    .then(r => r.text())
+    .then(txt => JSON.parse(txt))
+    .then(data => {
+      const busy = data.busy || [];
+      timeEl.innerHTML = "";
 
-          if (!timeEl.options.length) {
-            timeEl.innerHTML = "<option value=''>Нет свободного времени</option>";
-          }
-        })
-        .catch(() => {
-          timeEl.innerHTML = "<option value=''>Ошибка загрузки</option>";
-        });
-    }
+      TIMES.forEach(t => {
+        if (!busy.includes(t)) {
+          const o = document.createElement("option");
+          o.value = t;
+          o.textContent = t;
+          timeEl.appendChild(o);
+        }
+      });
 
-    function book() {
-      const date = dateEl.value;
-      const time = timeEl.value;
-      const name = nameEl.value.trim();
-      const phone = phoneEl.value.trim();
-
-      if (!date || !time || !name || !phone) {
-        msgEl.textContent = "Заполни дату, время, имя и телефон.";
-        return;
+      if (!timeEl.options.length) {
+        timeEl.innerHTML = "<option>Нет свободного времени</option>";
       }
+    })
+    .catch(err => {
+      timeEl.innerHTML = "<option>Ошибка загрузки</option>";
+    });
+}
 
-      btnEl.disabled = true;
-      msgEl.textContent = "Записываю...";
+function book() {
+  const date = dateEl.value;
+  const time = timeEl.value;
+  const name = nameEl.value.trim();
+  const phone = phoneEl.value.trim();
 
-      const url = `${API}?action=book&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`;
+  if (!date || !time || !name || !phone) {
+    msgEl.textContent = "Заполни все поля";
+    return;
+  }
 
-      fetch(url)
-        .then(r => r.json())
-        .then(res => {
-          if (res.ok) {
-            msgEl.textContent = "✅ Запись сохранена";
-            loadTimes(); // слот исчезает сразу
-          } else if (res.error === "SLOT_BUSY") {
-            msgEl.textContent = "⛔ Это время уже занято";
-            loadTimes();
-          } else {
-            msgEl.textContent = "❌ Ошибка";
-          }
-        })
-        .catch(() => {
-          msgEl.textContent = "❌ Ошибка";
-        })
-        .finally(() => {
-          btnEl.disabled = false;
-        });
-    }
-  </script>
+  btnEl.disabled = true;
+  msgEl.textContent = "Записываю...";
+
+  const url =
+    API +
+    "?action=book" +
+    "&date=" + encodeURIComponent(date) +
+    "&time=" + encodeURIComponent(time) +
+    "&name=" + encodeURIComponent(name) +
+    "&phone=" + encodeURIComponent(phone);
+
+  fetch(url)
+    .then(r => r.text())
+    .then(txt => JSON.parse(txt))
+    .then(res => {
+      if (res.ok) {
+        msgEl.textContent = "✅ Запись сохранена";
+        loadTimes(); // время исчезает сразу
+      } else if (res.error === "SLOT_BUSY") {
+        msgEl.textContent = "⛔ Это время уже занято";
+        loadTimes();
+      } else {
+        msgEl.textContent = "❌ Ошибка";
+      }
+    })
+    .catch(err => {
+      msgEl.textContent = "❌ Ошибка связи";
+    })
+    .finally(() => {
+      btnEl.disabled = false;
+    });
+}
+</script>
+
 </body>
 </html>
